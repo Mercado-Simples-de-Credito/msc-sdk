@@ -18,4 +18,5 @@ dependencies = [
 ]
 
 [tool.setuptools]
+packages = ["msc_sdk"]
 py-modules = ["msc_sdk"]
