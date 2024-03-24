@@ -17,7 +17,6 @@ from msc_sdk.utils.converters import (
     list_int_to_float,
     dict_float_to_int,
     list_float_to_int,
-    datetime_to_date_str,
 )
 
 
