@@ -1,0 +1,9 @@
+pre-commit>=3.6.2
+black>=24.3.0
+flake8>=7.0.0
+pytest>=8.1.1
+requests>=2.31.0
+pydantic>=2.6.4
+cachetools>=5.3.3
+pydantic_core>=2.16.3
+setuptools>=69.2.0
