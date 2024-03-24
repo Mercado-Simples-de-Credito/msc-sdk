@@ -18,5 +18,5 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["msc_sdk"]
-py-modules = ["msc_sdk", "msc_sdk.authenticate", "msc_sdk.contract", "msc_sdk.position", "msc_sdk.utils"]
+packages = ["msc_sdk", "msc_sdk.authenticate", "msc_sdk.contract", "msc_sdk.position", "msc_sdk.utils"]
+py-modules = ["msc_sdk"]
