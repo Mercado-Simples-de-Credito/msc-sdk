@@ -16,4 +16,6 @@ dependencies = [
     "pytest>=8.1.1",
     "requests-mock>=1.11.0"
 ]
+
+[tool.setuptools]
 py-modules = ["msc_sdk"]
