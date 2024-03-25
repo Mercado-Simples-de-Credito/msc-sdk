@@ -3,7 +3,7 @@ from datetime import date, datetime
 from typing import Self, List
 
 import requests
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from msc_sdk.authenticate import Credential, Authenticate
 from msc_sdk.enums import APINamespaces
@@ -12,6 +12,7 @@ from msc_sdk.errors import Unauthorized, ServerError, BillingError
 from msc_sdk.position import PositionUR
 from msc_sdk.utils.api_tools import get_url
 from msc_sdk.utils.converters import list_float_to_int
+from msc_sdk.utils.validators import validate_cnpj
 
 
 class ContractURData(BaseModel):
@@ -30,6 +31,13 @@ class ContractPosition(BaseModel):
 
     class Config:
         validate_assignment = True
+
+    @model_validator(mode="before")
+    def validate(self):
+        if self.get("acquirer", None):
+            self["acquirer"] = validate_cnpj(self["acquirer"])
+
+        return self
 
     @classmethod
     def from_position_urs(cls, position_urs: List[PositionUR], payment_scheme: str, acquirer: str) -> Self:

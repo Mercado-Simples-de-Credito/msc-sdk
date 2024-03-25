@@ -12,9 +12,9 @@ from msc_sdk.position.position import (
 def test_data():
     request_position_ur_list = RequestPositionURList(
         optin=[
-            RequestPositionUR(payment_scheme="VCC", acquirer="41548447000187"),
-            RequestPositionUR(payment_scheme="MCC", acquirer="41548447000187"),
-            RequestPositionUR(payment_scheme="ECC", acquirer="41548447000187"),
+            RequestPositionUR(payment_scheme="VCC", acquirer="1027058000191"),
+            RequestPositionUR(payment_scheme="MCC", acquirer="1027058000191"),
+            RequestPositionUR(payment_scheme="ECC", acquirer="1027058000191"),
         ]
     )
 

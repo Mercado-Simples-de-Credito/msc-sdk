@@ -26,6 +26,13 @@ class RequestPositionUR(BaseModel):
     class Config:
         validate_assignment = True
 
+    @model_validator(mode="before")
+    def validate(self):
+        if self.get("acquirer", None):
+            self["acquirer"] = validate_cnpj(self["acquirer"])
+
+        return self
+
 
 class RequestPositionURList(BaseModel):
     optin: List[RequestPositionUR]
@@ -74,6 +81,9 @@ class Position(BaseModel):
     def validate(self):
         if self.get("asset_holder", None):
             self["asset_holder"] = validate_cnpj(self["asset_holder"])
+
+        if self.get("acquirer", None):
+            self["acquirer"] = validate_cnpj(self["acquirer"])
 
         return self
 

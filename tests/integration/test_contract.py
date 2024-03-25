@@ -15,7 +15,7 @@ def test_data():
             PositionUR(due_date="2030-02-01", ur_amount="20.00", value_available="20.00"),
         ],
         payment_scheme="MCC",
-        acquirer="41548447000187",
+        acquirer="1027058000191",
     )
     contract_position.add_from_position_urs(
         position_urs=[
@@ -23,7 +23,7 @@ def test_data():
             PositionUR(due_date="2030-02-01", ur_amount="40.00", value_available="40.00"),
         ],
         payment_scheme="VCC",
-        acquirer="41548447000187",
+        acquirer="1027058000191",
     )
 
     balance_due = 0

@@ -49,6 +49,13 @@ class ContractUR(BaseModel):
         allow_population_by_field_name = True
         validate_assignment = True
 
+    @model_validator(mode="before")
+    def validate(self):
+        if self.get("acquirer", None):
+            self["acquirer"] = validate_cnpj(self["acquirer"])
+
+        return self
+
 
 class Contract(BaseModel):
     key: str = None

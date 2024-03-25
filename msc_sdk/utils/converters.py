@@ -52,7 +52,7 @@ def dict_int_to_float(model_dict: Dict, fields_to_convert: List[str]) -> Dict:
         A dictionary with specified fields converted to floats.
     """
     for field_name in fields_to_convert:
-        if field_name in model_dict:
+        if model_dict.get(field_name, None):
             model_dict[field_name] = model_dict[field_name] / 100
     return model_dict
 
