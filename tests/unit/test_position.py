@@ -24,7 +24,7 @@ def test_data():
         ]
     )
 
-    asset_holder = "44226946000146"
+    asset_holder = "89785141000170"
     update_position_start = datetime.now().isoformat()
 
     positions = []
@@ -51,7 +51,7 @@ def test_data():
             )
         )
 
-    return dict(asset_holder="44226946000146", request_position_ur_list=request_position_ur_list, positions=positions)
+    return dict(asset_holder=asset_holder, request_position_ur_list=request_position_ur_list, positions=positions)
 
 
 def test_new_single_with_valid_inputs(credential, test_data, requests_mock):

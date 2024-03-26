@@ -63,15 +63,15 @@ class Position(BaseModel):
     asset_holder: str
     payment_scheme: str
     acquirer: str
-    update_position_start: datetime = None
+    update_position_start: datetime | None = None
     update_position_end: datetime
     key_optin_tag: str = None
     ur_list_resume: List[PositionUR] = None
-    total_ur_amount: float = 0
-    total_value_available: float = 0
-    ur_list_last_update: datetime = None
+    total_ur_amount: float | None = 0
+    total_value_available: float | None = 0
+    ur_list_last_update: datetime | None = None
     created_on: datetime = Field(default_factory=datetime.now)
-    updated_on: datetime = None
+    updated_on: datetime | None = None
 
     class Config:
         validate_assignment = True
