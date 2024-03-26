@@ -117,7 +117,7 @@ class Position(BaseModel):
             return cls(**data)
 
         elif response.status_code == 204:
-            raise NotFound("Contract not found")
+            raise NotFound("Position not found")
 
         elif response.status_code == 401:
             raise Unauthorized("Wrong credentials")
