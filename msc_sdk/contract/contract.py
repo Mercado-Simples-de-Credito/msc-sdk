@@ -46,7 +46,7 @@ class ContractUR(BaseModel):
     effect_priority: int = 0
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
         validate_assignment = True
 
     @model_validator(mode="before")
