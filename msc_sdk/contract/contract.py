@@ -120,6 +120,34 @@ class Contract(BaseModel):
 
         raise Exception(f"Unexpected error - status code {response.status_code} - response: {response.text}")
 
+    @classmethod
+    def cancel_by_key(cls, key: str, credential: Credential) -> Self:
+        api_path = "cancel"
+
+        auth = Authenticate.token(credential)
+
+        response = requests.patch(
+            url=get_url(APINamespaces.CONTRACTS, api_path),
+            headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
+            json=dict(key=key),
+        )
+
+        if response.status_code == 200:
+            contract = cls.get_by_key(key=key, credential=credential)
+
+            return contract
+
+        elif response.status_code == 204:
+            raise NotFound("Contract not found")
+
+        elif response.status_code == 401:
+            raise Unauthorized("Wrong credentials")
+
+        elif response.status_code >= 500:
+            raise ServerError("Server error")
+
+        raise Exception(f"Unexpected error - status code {response.status_code} - response: {response.text}")
+
     def model_dump_json(self, *args, **kwargs):
         data = json.loads(super().model_dump_json(*args, **kwargs))
 
