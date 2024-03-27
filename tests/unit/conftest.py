@@ -26,7 +26,6 @@ def credential(requests_mock) -> Credential:
     )
     api_user = "test_user"
     api_pass = "test_pass"
-    key = "test_key"
 
     access_token = "test_token"
     response_data = {"access_token": access_token}
@@ -36,4 +35,4 @@ def credential(requests_mock) -> Credential:
         status_code=200,
     )
 
-    return Credential.new(document, bank_account, api_user, api_pass, key)
+    return Credential.new(document, bank_account, api_user, api_pass)

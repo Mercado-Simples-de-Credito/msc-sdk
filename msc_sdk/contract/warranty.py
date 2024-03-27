@@ -10,4 +10,4 @@ class WarrantyType(str, Enum):
 
 class ContractWarranty(Contract):
     warranty_type: str
-    warranty_amount: int
+    warranty_amount: float

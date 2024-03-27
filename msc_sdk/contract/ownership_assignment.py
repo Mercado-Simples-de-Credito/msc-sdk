@@ -17,7 +17,7 @@ from msc_sdk.utils.validators import validate_cnpj
 
 class ContractURData(BaseModel):
     due_date: date
-    value_available: int
+    value_available: float
 
     class Config:
         validate_assignment = True

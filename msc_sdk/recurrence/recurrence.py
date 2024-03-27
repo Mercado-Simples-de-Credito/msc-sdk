@@ -37,7 +37,7 @@ class Recurrence(BaseModel):
     acquirer: str
     bank_account: BankAccount
     ur_percentage: int = 0
-    discount_rate_per_year: int
+    discount_rate_per_year: float
     contract_key: str = None
     created_at: datetime
     updated_at: datetime = None
@@ -55,7 +55,7 @@ class Recurrence(BaseModel):
         acquirer: str,
         bank_account: BankAccount,
         ur_percentage: int,
-        discount_rate_per_year: int,
+        discount_rate_per_year: float,
         payment_scheme: list[PaymentScheme],
     ) -> Self:
         # TODO: Implement
@@ -116,7 +116,7 @@ class Recurrence(BaseModel):
         cls,
         credential: Credential,
         recurrence_id: str,
-        new_discount_rate_per_year: int,
+        new_discount_rate_per_year: float,
         msc_customer: str,
         msc_integrator: str = None,
     ) -> Self:
