@@ -15,7 +15,7 @@ def get_url(namespace: APINamespaces, api_path: str = None) -> str:
         str: The constructed URL.
     """
     if not api_path:
-        url = f"{ConfigSDK.get_config().base_url}{namespace.value}"
+        url = f"{ConfigSDK.get_config().base_url}{namespace.value}/"
     else:
         url = f"{ConfigSDK.get_config().base_url}{namespace.value}/{api_path}"
 

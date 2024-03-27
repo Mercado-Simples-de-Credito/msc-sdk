@@ -71,11 +71,11 @@ class Contract(BaseModel):
     percentage_value: int = 0
     process_key_tag: str = None
     ur_list: List[ContractUR] = []
-    ur_list_last_update: datetime = None
+    ur_list_last_update: datetime | None = None
     status: Any = None
     created_on: datetime
-    updated_on: datetime = None
-    canceled_on: datetime = None
+    updated_on: datetime | None = None
+    canceled_on: datetime | None = None
 
     class Config:
         validate_assignment = True
@@ -85,6 +85,9 @@ class Contract(BaseModel):
     def validate(self):
         if self.get("asset_holder", None):
             self["asset_holder"] = validate_cnpj(self["asset_holder"])
+
+        if not self.get("ur_list", None):
+            del self["ur_list"]
 
         return self
 
