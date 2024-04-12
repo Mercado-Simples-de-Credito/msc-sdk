@@ -85,10 +85,11 @@ class ContractPositionList(BaseModel):
         positions = ContractPosition.from_position_urs(
             position_urs=position_urs, payment_scheme=payment_scheme, acquirer=acquirer
         )
-        self.positions.append(positions)
 
         if positions.max_due_date > self.max_due_date:
             self.max_due_date = positions.max_due_date
+
+        self.positions.append(positions)
 
     def model_dump_json(self, *args, **kwargs):
         data = json.loads(super().model_dump_json(*args, **kwargs))

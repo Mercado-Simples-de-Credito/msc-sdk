@@ -95,19 +95,37 @@ class Position(BaseModel):
         acquirer: str,
         asset_holder: str,
     ) -> Self:
+        """
+        A class method to get position data.
+
+        Args:
+            credential: The credentials needed for authentication.
+            payment_scheme: The payment scheme to filter the data.
+            acquirer: The acquirer to filter the data.
+            asset_holder: The asset holder to filter the data.
+
+        Returns:
+            Self: An instance of the class with the retrieved data.
+        """
         api_path = "report"
         auth = Authenticate.token(credential)
 
-        response = requests.get(
-            url=get_url(APINamespaces.POSITIONS, api_path),
-            headers={"Authorization": f"Bearer {auth.access_token.get_secret_value()}"},
-            params={
-                "payment_scheme": payment_scheme,
-                "acquirer": acquirer,
-                "asset_holder": asset_holder,
-                "msc_customer": credential.document,
-            },
-        )
+        for i in range(5):
+            try:
+                response = requests.get(
+                    url=get_url(APINamespaces.POSITIONS, api_path),
+                    headers={"Authorization": f"Bearer {auth.access_token.get_secret_value()}"},
+                    params={
+                        "payment_scheme": payment_scheme,
+                        "acquirer": acquirer,
+                        "asset_holder": asset_holder,
+                        "msc_customer": credential.document,
+                    },
+                )
+                break
+            except Exception as e:
+                if i == 4:
+                    raise e
 
         if response.status_code == 200:
             data = dict_int_to_float(response.json(), ["total_ur_amount", "total_value_available"])
@@ -143,7 +161,8 @@ def request_position_report(
         asset_holder (str): CNPJ of the asset holder
         request_position_type (RequestPositionType): Type of request
         request_position_ur_list (RequestPositionURList): List of URs
-        update_position_end (datetime, optional): End date of the recurrent position. Defaults to None.
+        update_position_end (datetime, optional): End date of the recurrent position, used only for
+        request_position_type = RequestPositionType.RECURRENT. Defaults to None.
 
     Returns:
         tuple[List[Position], RequestPositionURList]: List of positions and RequestPositionURList with
@@ -163,11 +182,17 @@ def request_position_report(
             raise ValueError("Recurrent positions must have an end date 'update_position_end'")
         payload["update_position_end"] = update_position_end.strftime("%Y-%m-%d")
 
-    response = requests.post(
-        url=get_url(APINamespaces.POSITIONS, api_path),
-        headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
-        json=payload,
-    )
+    for i in range(5):
+        try:
+            response = requests.post(
+                url=get_url(APINamespaces.POSITIONS, api_path),
+                headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
+                json=payload,
+            )
+            break
+        except Exception as e:
+            if i == 4:
+                raise e
 
     if response.status_code == 200:
         response = response.json()

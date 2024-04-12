@@ -1,2 +1,2 @@
-from .ownership_assignment import ContractOwnershipAssignment
+from .ownership_assignment import ContractOwnershipAssignment, ContractPositionList
 from .warranty import ContractWarranty
