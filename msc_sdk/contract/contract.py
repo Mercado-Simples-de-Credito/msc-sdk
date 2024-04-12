@@ -93,13 +93,35 @@ class Contract(BaseModel):
 
     @classmethod
     def get_by_key(cls, key: str, credential: Credential) -> Self:
+        """
+        A class method to retrieve contract by key using.
+
+        Parameters:
+            key (str): The key to retrieve the contract.
+            credential (Credential): The credential object used for authentication.
+
+        Returns:
+            Self: An instance of the class with the retrieved data.
+
+        Raises:
+            NotFound: If the contract is not found.
+            Unauthorized: If the credentials are incorrect.
+            ServerError: If a server error occurs.
+            Exception: For unexpected errors including the response status code and text.
+        """
         auth = Authenticate.token(credential)
 
-        response = requests.get(
-            url=get_url(APINamespaces.CONTRACTS),
-            headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
-            params=dict(key=key, msc_customer=credential.document),
-        )
+        for i in range(5):
+            try:
+                response = requests.get(
+                    url=get_url(APINamespaces.CONTRACTS),
+                    headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
+                    params=dict(key=key, msc_customer=credential.document),
+                )
+                break
+            except Exception as e:
+                if i == 4:
+                    raise e
 
         if response.status_code == 200:
             data = dict_int_to_float(response.json(), ["balance_due", "committed_effect_amount"])
@@ -122,15 +144,37 @@ class Contract(BaseModel):
 
     @classmethod
     def cancel_by_key(cls, key: str, credential: Credential) -> Self:
+        """
+        A class method to cancel a contract by its key using the provided credential.
+
+        Parameters:
+            key (str): The key of the contract to be canceled.
+            credential (Credential): The credential used for authentication.
+
+        Returns:
+            Self: The canceled contract.
+
+        Raises:
+            NotFound: If the contract is not found.
+            Unauthorized: If the credentials are incorrect.
+            ServerError: If a server error occurs.
+            Exception: If an unexpected error occurs.
+        """
         api_path = "cancel"
 
         auth = Authenticate.token(credential)
 
-        response = requests.patch(
-            url=get_url(APINamespaces.CONTRACTS, api_path),
-            headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
-            json=dict(key=key),
-        )
+        for i in range(5):
+            try:
+                response = requests.patch(
+                    url=get_url(APINamespaces.CONTRACTS, api_path),
+                    headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
+                    json=dict(key=key),
+                )
+                break
+            except Exception as e:
+                if i == 4:
+                    raise e
 
         if response.status_code == 200:
             contract = cls.get_by_key(key=key, credential=credential)

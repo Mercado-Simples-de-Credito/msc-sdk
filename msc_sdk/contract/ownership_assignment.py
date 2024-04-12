@@ -41,6 +41,17 @@ class ContractPosition(BaseModel):
 
     @classmethod
     def from_position_urs(cls, position_urs: List[PositionUR], payment_scheme: str, acquirer: str) -> Self:
+        """
+        Generate a new instance of ContractPosition from a list of PositionUR objects, a payment scheme and an acquirer.
+
+        Parameters:
+            position_urs (List[PositionUR]): A list of PositionUR objects.
+            payment_scheme (str): The payment scheme for the new instance.
+            acquirer (str): The acquirer for the new instance.
+
+        Returns:
+            Self: A new instance of ContractPosition.
+        """
         ur_data_list = []
         max_due_date = datetime.now()
 
@@ -63,6 +74,14 @@ class ContractPositionList(BaseModel):
     max_due_date: datetime = Field(default_factory=datetime.now, exclude=True)
 
     def add_from_position_urs(self, position_urs: List[PositionUR], payment_scheme: str, acquirer: str):
+        """
+        Generate ContractPositions from PositionURs and append them to the positions list.
+
+        Args:
+            position_urs (List[PositionUR]): List of PositionUR objects to create ContractPositions from.
+            payment_scheme (str): The payment scheme to use for creating ContractPositions.
+            acquirer (str): The acquirer to associate with the ContractPositions.
+        """
         positions = ContractPosition.from_position_urs(
             position_urs=position_urs, payment_scheme=payment_scheme, acquirer=acquirer
         )
@@ -83,6 +102,17 @@ class ContractPositionList(BaseModel):
 class ContractOwnershipAssignment(Contract):
     @classmethod
     def new(cls, credential: Credential, asset_holder: str, positions: ContractPositionList) -> Self:
+        """
+        A class method to create a new contract of ownership assignment with detailed information.
+
+        Parameters:
+            credential (Credential): The credential used for authentication.
+            asset_holder (str): The asset holder's information.
+            positions (ContractPositionList): A list of contract positions.
+
+        Returns:
+            Self: The newly created contract.
+        """
         api_path = "detailed/fixed_amount"
 
         auth = Authenticate.token(credential)
@@ -96,11 +126,17 @@ class ContractOwnershipAssignment(Contract):
             positions=json.loads(positions.model_dump_json())["positions"],
         )
 
-        response = requests.post(
-            url=get_url(APINamespaces.CONTRACTS, api_path),
-            headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
-            json=payload,
-        )
+        for i in range(5):
+            try:
+                response = requests.post(
+                    url=get_url(APINamespaces.CONTRACTS, api_path),
+                    headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
+                    json=payload,
+                )
+                break
+            except Exception as e:
+                if i == 4:
+                    raise e
 
         if response.status_code == 200:
             response = response.json()

@@ -7,7 +7,7 @@ from pydantic import BaseModel, model_validator, Field
 
 from msc_sdk.authenticate import Authenticate, Credential
 from msc_sdk.enums import APINamespaces
-from msc_sdk.errors import Unauthorized, ServerError, NotFound, BillingError
+from msc_sdk.errors import Unauthorized, ServerError, NotFound, BillingError, BadRequest
 from msc_sdk.utils.api_tools import get_url
 from msc_sdk.utils.converters import dict_int_to_float, list_int_to_float
 from msc_sdk.utils.validators import validate_cnpj
@@ -196,6 +196,9 @@ def request_position_report(
 
         return positions, request_position_ur_list
 
+    elif response.status_code == 400:
+        raise BadRequest(response.text)
+
     elif response.status_code == 401:
         raise Unauthorized("Wrong credentials")
 
@@ -203,6 +206,6 @@ def request_position_report(
         raise BillingError(response.text)
 
     elif response.status_code >= 500:
-        raise ServerError("Server error")
+        raise ServerError(response.text)
 
     raise Exception(f"Unexpected error - status code {response.status_code} - response: {response.text}")
