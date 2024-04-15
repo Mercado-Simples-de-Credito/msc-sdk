@@ -12,7 +12,7 @@ def date_str(delta_days: int) -> str:
 
 
 _asset_holders = ["15365935000149"]
-_acquirers = ["1027058000191"]
+_acquirers = ["1027058000191", "15111975000164"]
 _payment_schemes = ["VCC", "MCC", "ECC"]
 _bank_account = BankAccount(
     branch="1234",
