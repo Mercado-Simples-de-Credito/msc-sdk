@@ -1,13 +1,18 @@
 import enum
 from datetime import datetime
-from typing import Self, List
+from typing import Self, List, Any
 
-from pydantic import BaseModel
+import requests
+from pydantic import BaseModel, Field
 
-from msc_sdk.authenticate import Credential
-from msc_sdk.commons import BankAccount
-from msc_sdk.errors import NotFound
+from msc_sdk.authenticate import Credential, Authenticate
+from msc_sdk.commons import BankAccount, History
+from msc_sdk.config_sdk import ConfigSDK, Environment
+from msc_sdk.enums import APINamespaces
+from msc_sdk.errors import NotFound, Unauthorized, ServerError
 from msc_sdk.recurrence import mock_data
+from msc_sdk.utils.api_tools import get_url
+from msc_sdk.utils.converters import dict_float_to_int, dict_int_to_float
 
 
 class RecurrenceStatus(enum.Enum):
@@ -33,6 +38,8 @@ class Recurrence(BaseModel):
     status: RecurrenceStatus = RecurrenceStatus.PENDING
     cancel_reason: RecurrenceCancelReason = None
     asset_holder: str
+    msc_integrator: str
+    msc_customer: str
     payment_scheme: list[PaymentScheme]
     acquirer: str
     bank_account: BankAccount
@@ -42,6 +49,7 @@ class Recurrence(BaseModel):
     created_at: datetime
     updated_at: datetime = None
     cancelled_at: datetime = None
+    history: History
 
     class Config:
         validate_assignment = True
@@ -57,23 +65,135 @@ class Recurrence(BaseModel):
         ur_percentage: int,
         discount_rate_per_year: float,
         payment_scheme: list[PaymentScheme],
+        msc_integrator: str,
     ) -> Self:
-        # TODO: Implement
-        raise NotImplementedError
+        if ConfigSDK.get_config().environment == Environment.DEV:
+            return cls(**mock_data["recurrence_list"][0])
+
+        auth = Authenticate.token(credential)
+
+        body = {
+            "asset_holder": asset_holder,
+            "acquirer": acquirer,
+            "bank_account": bank_account.model_dump(),
+            "ur_percentage": ur_percentage,
+            "discount_rate_per_year": int(discount_rate_per_year * 100),
+            "payment_scheme": payment_scheme,
+            "msc_integrator": msc_integrator,
+        }
+
+        for i in range(5):
+            try:
+                response = requests.post(
+                    url=get_url(APINamespaces.RECURRENCES),
+                    headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
+                    json=body,
+                )
+                break
+            except Exception as e:
+                if i == 4:
+                    raise e
+
+        if response.status_code == 200:
+            recurrence = cls(**response.json())
+
+            return recurrence
+
+        elif response.status_code == 204:
+            raise NotFound("Contract not found")
+
+        elif response.status_code == 401:
+            raise Unauthorized("Wrong credentials")
+
+        elif response.status_code >= 500:
+            raise ServerError("Server error")
+
+        raise Exception(f"Unexpected error - status code {response.status_code} - response: {response.text}")
 
     @classmethod
-    def get_by_id(cls, credential: Credential, recurrence_id: str) -> Self:
-        # TODO: Implement
-        for recurrence in mock_data["recurrence_list"]:
-            if recurrence["id"] == recurrence_id:
-                return cls(**recurrence)
+    def get_by_id(cls, credential: Credential, recurrence_id: str, msc_integrator: str = None) -> Self:
+        if ConfigSDK.get_config().environment == Environment.DEV:
+            for recurrence in mock_data["recurrence_list"]:
+                if recurrence["id"] == recurrence_id:
+                    return cls(**recurrence)
 
-        return NotFound("Recurrence not found")
+        api_path = "search"
+
+        auth = Authenticate.token(credential)
+
+        param = {"msc_customer": credential.document, "id": recurrence_id}
+        if msc_integrator:
+            param["msc_integrator"] = msc_integrator
+
+        for i in range(5):
+            try:
+                response = requests.get(
+                    url=get_url(APINamespaces.RECURRENCES, api_path),
+                    headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
+                    params=param,
+                )
+                break
+            except Exception as e:
+                if i == 4:
+                    raise e
+
+        if response.status_code == 200:
+            recurrence_json = response.json()
+            data = dict_int_to_float(recurrence_json, ["discount_rate_per_year"])
+            recurrence = cls(**data)
+
+            return recurrence
+
+        elif response.status_code == 204:
+            raise NotFound("Contract not found")
+
+        elif response.status_code == 401:
+            raise Unauthorized("Wrong credentials")
+
+        elif response.status_code >= 500:
+            raise ServerError("Server error")
+
+        raise Exception(f"Unexpected error - status code {response.status_code} - response: {response.text}")
 
     @classmethod
-    def get_by_contract_key(cls, credential: Credential, contract_key: str, msc_customer: str) -> Self | None:
-        # TODO: Implement
-        raise NotImplementedError
+    def get_by_contract_key(cls, credential: Credential, contract_key: str, msc_integrator: str = None) -> Self | None:
+        api_path = "search"
+
+        auth = Authenticate.token(credential)
+
+        param = {"msc_customer": credential.document, "contract_key": contract_key}
+        if msc_integrator:
+            param["msc_integrator"] = msc_integrator
+
+        for i in range(5):
+            try:
+                response = requests.get(
+                    url=get_url(APINamespaces.RECURRENCES, api_path),
+                    headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
+                    params=param,
+                )
+                break
+            except Exception as e:
+                if i == 4:
+                    raise e
+
+        if response.status_code == 200:
+            recurrence_json = response.json()
+            data = dict_int_to_float(recurrence_json, ["discount_rate_per_year"])
+            recurrence = cls(**data)
+
+            return recurrence
+
+        elif response.status_code == 204:
+            raise NotFound("Contract not found")
+
+        elif response.status_code == 401:
+            raise Unauthorized("Wrong credentials")
+
+        elif response.status_code >= 500:
+            raise ServerError("Server error")
+
+        raise Exception(f"Unexpected error - status code {response.status_code} - response: {response.text}")
 
     @classmethod
     def cancel(
@@ -84,20 +204,42 @@ class Recurrence(BaseModel):
         cancel_reason: RecurrenceCancelReason,
         msc_integrator: str = None,
     ) -> Self:
-        # TODO: Implement
-        raise NotImplementedError
+        api_path = f"cancel/{recurrence_id}"
 
-    @classmethod
-    def update_percentage_ur(
-        cls,
-        credential: Credential,
-        recurrence_id: str,
-        new_percentage: int,
-        msc_customer: str,
-        msc_integrator: str = None,
-    ) -> Self:
-        # TODO: Implement
-        raise NotImplementedError
+        auth = Authenticate.token(credential)
+
+        params = {"msc_customer": msc_customer, "cancel_reason": cancel_reason.value}
+
+        if msc_integrator:
+            params["msc_integrator"] = msc_integrator
+
+        for i in range(5):
+            try:
+                response = requests.post(
+                    url=get_url(APINamespaces.RECURRENCES, api_path),
+                    headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
+                    params=params,
+                )
+                break
+            except Exception as e:
+                if i == 4:
+                    raise e
+
+        if response.status_code == 200:
+            recurrence = cls(**response.json())
+
+            return recurrence
+
+        elif response.status_code == 204:
+            raise NotFound("Contract not found")
+
+        elif response.status_code == 401:
+            raise Unauthorized("Wrong credentials")
+
+        elif response.status_code >= 500:
+            raise ServerError("Server error")
+
+        raise Exception(f"Unexpected error - status code {response.status_code} - response: {response.text}")
 
     @classmethod
     def update_bank_account(
@@ -108,8 +250,43 @@ class Recurrence(BaseModel):
         msc_customer: str,
         msc_integrator: str = None,
     ) -> Self:
-        # TODO: Implement
-        raise NotImplementedError
+        api_path = f"bank-account/{recurrence_id}"
+
+        auth = Authenticate.token(credential)
+
+        params = {"msc_customer": msc_customer}
+
+        if msc_integrator:
+            params["msc_integrator"] = msc_integrator
+
+        for i in range(5):
+            try:
+                response = requests.patch(
+                    url=get_url(APINamespaces.RECURRENCES, api_path),
+                    headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
+                    json=bank_account.model_dump(),
+                    params=params,
+                )
+                break
+            except Exception as e:
+                if i == 4:
+                    raise e
+
+        if response.status_code == 200:
+            bank_account = BankAccount(**response.json())
+
+            return bank_account
+
+        elif response.status_code == 204:
+            raise NotFound("Contract not found")
+
+        elif response.status_code == 401:
+            raise Unauthorized("Wrong credentials")
+
+        elif response.status_code >= 500:
+            raise ServerError("Server error")
+
+        raise Exception(f"Unexpected error - status code {response.status_code} - response: {response.text}")
 
     @classmethod
     def update_discount_rate_per_year(
@@ -120,14 +297,84 @@ class Recurrence(BaseModel):
         msc_customer: str,
         msc_integrator: str = None,
     ) -> Self:
-        # TODO: Implement
-        raise NotImplementedError
+        api_path = f"discount-rate-per-year/{recurrence_id}"
+
+        auth = Authenticate.token(credential)
+
+        params = {"msc_customer": msc_customer, "new_discount_rate": new_discount_rate_per_year}
+
+        if msc_integrator:
+            params["msc_integrator"] = msc_integrator
+
+        for i in range(5):
+            try:
+                response = requests.patch(
+                    url=get_url(APINamespaces.RECURRENCES, api_path),
+                    headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
+                    params=params,
+                )
+                break
+            except Exception as e:
+                if i == 4:
+                    raise e
+
+        if response.status_code == 200:
+            recurrence = cls(**response.json())
+
+            return recurrence
+
+        elif response.status_code == 204:
+            raise NotFound("Contract not found")
+
+        elif response.status_code == 401:
+            raise Unauthorized("Wrong credentials")
+
+        elif response.status_code >= 500:
+            raise ServerError("Server error")
+
+        raise Exception(f"Unexpected error - status code {response.status_code} - response: {response.text}")
 
 
 class RecurrenceList(BaseModel):
     recurrences: List[Recurrence]
 
     @classmethod
-    def get(cls, credential: Credential, page: int, page_size: int) -> Self:
-        # TODO: Implement
-        return cls(recurrences=mock_data["recurrence_list"])
+    def get(cls, credential: Credential, page: int, page_size: int, msc_integrator: str = None) -> Self:
+        auth = Authenticate.token(credential)
+
+        params = {"masc_customer": credential.document, "page": page, "page_size": page_size}
+
+        if msc_integrator:
+            params["msc_integrator"] = msc_integrator
+
+        for i in range(5):
+            try:
+                response = requests.get(
+                    url=get_url(APINamespaces.RECURRENCES),
+                    headers=dict(Authorization=f"Bearer {auth.access_token.get_secret_value()}"),
+                    params={"msc_customer": credential.document, "page": page, "page_size": page_size},
+                )
+                break
+            except Exception as e:
+                if i == 4:
+                    raise e
+
+        if response.status_code == 200:
+            recurrence_lis_json = response.json()
+            recurrence_list = []
+            for recurrence in recurrence_lis_json["recurrences"]:
+                data = dict_int_to_float(recurrence, ["discount_rate_per_year"])
+                recurrence_list.append(data)
+
+            return cls(recurrences=recurrence_list)
+
+        elif response.status_code == 204:
+            raise NotFound("Contract not found")
+
+        elif response.status_code == 401:
+            raise Unauthorized("Wrong credentials")
+
+        elif response.status_code >= 500:
+            raise ServerError("Server error")
+
+        raise Exception(f"Unexpected error - status code {response.status_code} - response: {response.text}")

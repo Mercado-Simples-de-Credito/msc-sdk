@@ -5,6 +5,7 @@ class APINamespaces(str, Enum):
     AUTHENTICATE = "authenticate"
     CONTRACTS = "contracts"
     POSITIONS = "positions"
+    RECURRENCES = "recurrences"
 
 
 class AccountType(str, Enum):

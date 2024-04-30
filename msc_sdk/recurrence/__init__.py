@@ -54,6 +54,7 @@ for _ in range(_urs_count):
 _recurrence_ids = [str(uuid.uuid4()), str(uuid.uuid4())]
 
 _recurrence_list = []
+_history = {"updated_data": [], "snapshot": {}}
 for asset_holder in _asset_holders:
     for recurrence_id in _recurrence_ids:
         for acquirer in _acquirers:
@@ -62,10 +63,13 @@ for asset_holder in _asset_holders:
                     id=recurrence_id,
                     asset_holder=asset_holder,
                     payment_scheme=_payment_schemes,
+                    msc_customer=asset_holder,
+                    msc_integrator=str(uuid.uuid4()),
                     acquirer=acquirer,
                     bank_account=_bank_account,
                     discount_rate_per_year=12,
                     created_at=datetime.now(),
+                    history=_history,
                 )
             )
 
@@ -118,6 +122,18 @@ for recurrence in _recurrence_list:
 
 #  MOCK RRU
 _rru_list = []
+_operations_resume_rru_mock = {
+    "operation_id": "string",
+    "operation_date": datetime.now().isoformat(),
+    "previous_ur_amount": round(random.uniform(10.00, 1000.00), 2),
+    "previous_total_operated_amount_gross": round(random.uniform(10.00, 1000.00), 2),
+    "previous_total_operated_amount_net": round(random.uniform(10.00, 1000.00), 2),
+    "ur_amount": round(random.uniform(10.00, 1000.00), 2),
+    "operated_amount_gross": round(random.uniform(10.00, 1000.00), 2),
+    "operated_amount_net": round(random.uniform(10.00, 1000.00), 2),
+    "total_operated_amount_gross": round(random.uniform(10.00, 1000.00), 2),
+    "total_operated_amount_net": round(random.uniform(10.00, 1000.00), 2),
+}
 
 for operation in _operation_list:
     for ur in operation["operation_receivable_units"]:
@@ -135,6 +151,7 @@ for operation in _operation_list:
                 operated_amount_net=ur["amount_due"],
                 available_amount=0,
                 created_at=datetime.now() - timedelta(days=_delta_days),
+                operation=[_operations_resume_rru_mock],
             )
         )
 

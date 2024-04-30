@@ -8,6 +8,7 @@ from pydantic_core import Url
 class Environment(str, Enum):
     TEST = "test"
     PRODUCTION = "production"
+    DEV = "dev"
 
     def __str__(self):
         return self.value

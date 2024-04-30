@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from msc_sdk.enums import AccountType
@@ -16,3 +18,11 @@ class BankAccount(BaseModel):
         validate_assignment = True
         use_enum_values = True
         populate_by_name = True
+
+
+class History(BaseModel):
+    updated_data: list[Any] = []
+    snapshot: dict = {}
+
+    class Config:
+        validate_assignment = True
