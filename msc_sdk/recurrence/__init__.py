@@ -23,7 +23,7 @@ _bank_account = BankAccount(
     document_type="CNPJ",
     document_number="74634410000120",
 )
-
+_discount_rate = 0.01
 
 # MOCK URS
 _urs_count = 5
@@ -49,7 +49,6 @@ for _ in range(_urs_count):
                     )
                     delta_days -= 1
 
-
 #  MOCK RECURRENCE
 _recurrence_ids = [str(uuid.uuid4()), str(uuid.uuid4())]
 
@@ -73,7 +72,6 @@ for asset_holder in _asset_holders:
                 )
             )
 
-
 #  MOCK OPERATION
 _operation_list = []
 
@@ -83,10 +81,10 @@ for recurrence in _recurrence_list:
     total_amount = 0
     total_discount_amount = 0
     for ur in _urs_list:
-        discount_rate = (ur["due_date"] - datetime.now()).days
+        days_to_charge = (ur["due_date"] - datetime.now()).days
 
         total_amount += ur["amount"]
-        total_discount_amount += round(ur["amount"] * discount_rate / 100, 2)
+        total_discount_amount += round(ur["amount"] * (_discount_rate / 30) * days_to_charge, 2)
 
         operation_receivable_units.append(
             dict(
@@ -98,9 +96,9 @@ for recurrence in _recurrence_list:
                 payment_due_date=ur["due_date"],
                 amount=ur["amount"],
                 discount_rate_per_year=recurrence["discount_rate_per_year"],
-                discount_rate=discount_rate,
-                discount_amount=round(ur["amount"] * discount_rate / 100, 2),
-                amount_due=round(ur["amount"] - round(ur["amount"] * discount_rate / 100, 2), 2),
+                discount_rate=_discount_rate,
+                discount_amount=total_discount_amount,
+                amount_due=ur["amount"] - total_discount_amount,
             )
         )
 
@@ -119,42 +117,63 @@ for recurrence in _recurrence_list:
         )
     )
 
-
 #  MOCK RRU
 _rru_list = []
-_operations_resume_rru_mock = {
-    "operation_id": "string",
-    "operation_date": datetime.now().isoformat(),
-    "previous_ur_amount": round(random.uniform(10.00, 1000.00), 2),
-    "previous_total_operated_amount_gross": round(random.uniform(10.00, 1000.00), 2),
-    "previous_total_operated_amount_net": round(random.uniform(10.00, 1000.00), 2),
-    "ur_amount": round(random.uniform(10.00, 1000.00), 2),
-    "operated_amount_gross": round(random.uniform(10.00, 1000.00), 2),
-    "operated_amount_net": round(random.uniform(10.00, 1000.00), 2),
-    "total_operated_amount_gross": round(random.uniform(10.00, 1000.00), 2),
-    "total_operated_amount_net": round(random.uniform(10.00, 1000.00), 2),
-}
 
 for operation in _operation_list:
     for ur in operation["operation_receivable_units"]:
+        _operations_resume = [
+            dict(
+                operation_id=str(uuid.uuid4()),
+                operation_date=operation["operation_date"] - timedelta(days=1),
+                previous_ur_amount=0,
+                previous_total_operated_amount_gross=0,
+                previous_total_operated_amount_net=0,
+                ur_amount=ur["amount"] - 5,
+                operated_amount_gross=ur["amount"] - 5,
+                operated_amount_net=ur["amount_due"] - 4.5,
+                total_operated_amount_gross=ur["amount"] - 5,
+                total_operated_amount_net=ur["amount_due"] - 4.5,
+            ),
+            dict(
+                operation_id=operation["id"],
+                operation_date=operation["operation_date"],
+                previous_ur_amount=ur["amount"] - 5,
+                previous_total_operated_amount_gross=ur["amount"] - 5,
+                previous_total_operated_amount_net=ur["amount_due"] - 4.5,
+                ur_amount=ur["amount"],
+                operated_amount_gross=5,
+                operated_amount_net=4.5,
+                total_operated_amount_gross=ur["amount"],
+                total_operated_amount_net=ur["amount_due"],
+            ),
+
+        ]
         _rru_list.append(
             dict(
                 id=str(uuid.uuid4()),
                 recurrence_id=operation["recurrence_id"],
                 ur_id=ur["ur_id"],
                 asset_holder=ur["asset_holder"],
+                msc_integrator=operation["asset_holder"],
+                msc_customer=operation["asset_holder"],
                 acquirer=ur["acquirer"],
                 payment_scheme=ur["payment_scheme"],
                 due_date=ur["due_date"],
                 amount=ur["amount"],
-                operated_amount_gross=ur["amount"],
-                operated_amount_net=ur["amount_due"],
+                total_operated_amount_gross=ur["amount"],
+                total_operated_amount_net=ur["amount_due"],
                 available_amount=0,
                 created_at=datetime.now() - timedelta(days=_delta_days),
-                operation=[_operations_resume_rru_mock],
-            )
-        )
+                operations=_operations_resume,
+                previous_amount=ur["amount"] - 5,
+                previous_operated_amount_gross=ur["amount"] - 5,
+                previous_operated_amount_net=ur["amount_due"] - 4.5,
+                history=_history,
 
+            )
+
+        )
 
 mock_data = dict(
     asset_holders=_asset_holders,
@@ -162,7 +181,6 @@ mock_data = dict(
     operation_list=_operation_list,
     rru_list=_rru_list,
 )
-
 
 from .recurrence import RecurrenceList, Recurrence  # noqa
 from .rru import RecurrenceReceivableUnitList, RecurrenceReceivableUnit  # noqa

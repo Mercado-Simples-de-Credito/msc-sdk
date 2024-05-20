@@ -6,6 +6,7 @@ import requests
 from pydantic import BaseModel, Field, model_validator
 
 from msc_sdk.authenticate import Credential, Authenticate
+from msc_sdk.commons import History
 from msc_sdk.config_sdk import ConfigSDK, Environment
 from msc_sdk.enums import APINamespaces
 from msc_sdk.errors import NotFound, Unauthorized, ServerError
@@ -56,19 +57,22 @@ class RecurrenceReceivableUnit(BaseModel):
     recurrence_id: str
     ur_id: str
     asset_holder: str
+    msc_integrator: str
+    msc_customer: str
     acquirer: str
     payment_scheme: str
     due_date: datetime
     amount: float
-    operated_amount_gross: float = 0
-    operated_amount_net: float = 0
+    total_operated_amount_gross: float = 0
+    total_operated_amount_net: float = 0
     available_amount: float
+    previous_amount: float
+    previous_operated_amount_gross: float
+    previous_operated_amount_net: float
     operations: list[OperationResume] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime = None
-
-    class Config:
-        validate_assignment = True
+    history: History
 
     @model_validator(mode="before")
     def from_string_to_datetime(self):
@@ -77,10 +81,15 @@ class RecurrenceReceivableUnit(BaseModel):
 
     @model_validator(mode="before")
     def from_int_to_float(self):
-        field_list = ["amount", "operated_amount_gross", "operated_amount_net", "available_amount"]
-        in_field_list = [field for field in field_list if not isinstance(self.get(field), float)]
-        convertor = dict_int_to_float(self, in_field_list)
+
+        field_list = ["amount", "total_operated_amount_gross", "total_operated_amount_net",
+                      "available_amount", "previous_amount", "previous_operated_amount_gross",
+                      "previous_operated_amount_net"]
+        convertor = dict_int_to_float(self, field_list)
         return convertor
+
+    class Config:
+        validate_assignment = True
 
     @classmethod
     def get_by_ur_id(cls, credential: Credential, ur_id: str, recurrence_id: str) -> Self:

@@ -164,6 +164,9 @@ def rru_list_mock(mock: list = mock_data["rru_list"]) -> dict:
                                        "previous_total_operated_amount_net", "ur_amount",
                                        "operated_amount_gross", "operated_amount_net", "total_operated_amount_gross",
                                        "total_operated_amount_net"]
+        date_time_field_list_operations = ["operation_date"]
+        for index, items in enumerate(rru["operations"]):
+            rru["operations"][index] = dict_datetime_to_str(items, date_time_field_list_operations)
 
         rru["operations"] = [dict_float_to_int(operations_resume_rru_mock, operation_resume_field_list)]
 
@@ -451,19 +454,24 @@ def test_get_rru_by_ur_id(credential, requests_mock, rru_list_mock):
 
     recurrence_response = RecurrenceReceivableUnit.get_by_ur_id(credential, recurrence_id=rru["recurrence_id"],
                                                                 ur_id=rru["ur_id"])
-
+    print(rru)
     assert recurrence_response.id == rru["id"]
     assert recurrence_response.recurrence_id == rru["recurrence_id"]
     assert recurrence_response.ur_id == rru["ur_id"]
     assert recurrence_response.asset_holder == rru["asset_holder"]
+    assert recurrence_response.msc_integrator == rru["asset_holder"]
+    assert recurrence_response.msc_customer == rru["asset_holder"]
     assert recurrence_response.acquirer == rru["acquirer"]
     assert recurrence_response.payment_scheme == rru["payment_scheme"]
     assert recurrence_response.due_date == datetime.fromisoformat(rru["due_date"])
     assert recurrence_response.amount == rru["amount"] / 100
-    assert recurrence_response.operated_amount_gross == rru["operated_amount_gross"] / 100
-    assert recurrence_response.operated_amount_net == rru["operated_amount_net"] / 100
+    assert recurrence_response.total_operated_amount_gross == rru["total_operated_amount_gross"] / 100
+    assert recurrence_response.total_operated_amount_net == rru["total_operated_amount_net"] / 100
     assert recurrence_response.available_amount == rru["available_amount"] / 100
     assert recurrence_response.created_at == datetime.fromisoformat(rru["created_at"])
+    assert recurrence_response.previous_amount == rru["previous_amount"] / 100
+    assert recurrence_response.previous_operated_amount_gross == rru["previous_operated_amount_gross"] / 100
+    assert recurrence_response.previous_operated_amount_net == rru["previous_operated_amount_net"] / 100
 
     assert recurrence_response.operations[0].operation_id == rru["operations"][0]["operation_id"]
     assert recurrence_response.operations[0].operation_date == datetime.fromisoformat(
@@ -502,14 +510,19 @@ def test_get_rru_list_by_ur_id(credential, requests_mock, rru_list_mock, recurre
     assert recurrence_response.recurrence_id == rru["recurrence_id"]
     assert recurrence_response.ur_id == rru["ur_id"]
     assert recurrence_response.asset_holder == rru["asset_holder"]
+    assert recurrence_response.msc_integrator == rru["asset_holder"]
+    assert recurrence_response.msc_customer == rru["asset_holder"]
     assert recurrence_response.acquirer == rru["acquirer"]
     assert recurrence_response.payment_scheme == rru["payment_scheme"]
     assert recurrence_response.due_date == datetime.fromisoformat(rru["due_date"])
     assert recurrence_response.amount == rru["amount"] / 100
-    assert recurrence_response.operated_amount_gross == rru["operated_amount_gross"] / 100
-    assert recurrence_response.operated_amount_net == rru["operated_amount_net"] / 100
+    assert recurrence_response.total_operated_amount_gross == rru["total_operated_amount_gross"] / 100
+    assert recurrence_response.total_operated_amount_net == rru["total_operated_amount_net"] / 100
     assert recurrence_response.available_amount == rru["available_amount"] / 100
     assert recurrence_response.created_at == datetime.fromisoformat(rru["created_at"])
+    assert recurrence_response.previous_amount == rru["previous_amount"] / 100
+    assert recurrence_response.previous_operated_amount_gross == rru["previous_operated_amount_gross"] / 100
+    assert recurrence_response.previous_operated_amount_net == rru["previous_operated_amount_net"] / 100
 
     assert recurrence_response.operations[0].operation_id == rru["operations"][0]["operation_id"]
     assert recurrence_response.operations[0].operation_date == datetime.fromisoformat(
