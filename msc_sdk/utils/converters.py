@@ -77,3 +77,19 @@ def dict_float_to_int(model_dict: Dict, fields_to_convert: List[str]) -> Dict:
 
 def datetime_to_date_str(dt: datetime = datetime.now()) -> str:
     return dt.strftime("%Y-%m-%d")
+
+
+def dict_string_to_datetime(model_dict: Dict, fields_to_convert: List[str]) -> Dict:
+    for field_name in fields_to_convert:
+        if field_name in model_dict:
+            if isinstance(model_dict[field_name], str):
+                model_dict[field_name] = datetime.fromisoformat(model_dict[field_name])
+    return model_dict
+
+
+def dict_datetime_to_str(model_dict: Dict, fields_to_convert: List[str]) -> Dict:
+    for field_name in fields_to_convert:
+        if field_name in model_dict:
+            if isinstance(model_dict[field_name], datetime):
+                model_dict[field_name] = model_dict[field_name].isoformat()
+    return model_dict
