@@ -70,7 +70,7 @@ class Contract(BaseModel):
     committed_effect_amount: float = 0
     percentage_value: int = 0
     process_key_tag: str = None
-    ur_list: List[ContractUR] = []
+    ur_list: List[ContractUR]
     ur_list_last_update: datetime | None = None
     status: Any = None
     created_on: datetime
@@ -86,8 +86,7 @@ class Contract(BaseModel):
         if self.get("asset_holder", None):
             self["asset_holder"] = validate_cnpj(self["asset_holder"])
 
-        if not self.get("ur_list", None):
-            del self["ur_list"]
+        self["ur_list"] = self["ur_list"] if "ur_list" in self else []
 
         return self
 

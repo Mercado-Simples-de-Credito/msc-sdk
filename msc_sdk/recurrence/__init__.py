@@ -1,4 +1,5 @@
 # MOCK
+import os
 import random
 import uuid
 from datetime import datetime, timedelta
@@ -11,15 +12,16 @@ def date_str(delta_days: int) -> str:
     return (datetime.now() + timedelta(days=delta_days)).strftime("%Y-%m-%d")
 
 
+_msc_customer = os.getenv("MSC_DOCUMENT")
 _asset_holders = ["15365935000149"]
-_acquirers = ["1027058000191", "15111975000164"]
+_acquirers = ["01027058000191", "15111975000164"]
 _payment_schemes = ["VCC", "MCC", "ECC"]
 _bank_account = BankAccount(
     branch="1234",
     account="123456",
     account_digit="1",
     account_type=AccountType.CHECKING_ACCOUNT,
-    ispb="12345678900",
+    ispb="60701190",
     document_type="CNPJ",
     document_number="74634410000120",
 )
@@ -62,10 +64,11 @@ for asset_holder in _asset_holders:
                     id=recurrence_id,
                     asset_holder=asset_holder,
                     payment_scheme=_payment_schemes,
-                    msc_customer=asset_holder,
+                    msc_customer=_msc_customer,
                     msc_integrator=str(uuid.uuid4()),
                     acquirer=acquirer,
                     bank_account=_bank_account,
+                    ur_percentage=100,
                     discount_rate_per_year=12,
                     created_at=datetime.now(),
                     history=_history,
@@ -89,6 +92,7 @@ for recurrence in _recurrence_list:
         operation_receivable_units.append(
             dict(
                 ur_id=str(uuid.uuid4()),
+                msc_customer=_msc_customer,
                 asset_holder=recurrence["asset_holder"],
                 payment_scheme=ur["payment_scheme"],
                 acquirer=ur["acquirer"],
@@ -147,7 +151,6 @@ for operation in _operation_list:
                 total_operated_amount_gross=ur["amount"],
                 total_operated_amount_net=ur["amount_due"],
             ),
-
         ]
         _rru_list.append(
             dict(
@@ -156,7 +159,7 @@ for operation in _operation_list:
                 ur_id=ur["ur_id"],
                 asset_holder=ur["asset_holder"],
                 msc_integrator=operation["asset_holder"],
-                msc_customer=operation["asset_holder"],
+                msc_customer=_msc_customer,
                 acquirer=ur["acquirer"],
                 payment_scheme=ur["payment_scheme"],
                 due_date=ur["due_date"],
@@ -170,12 +173,11 @@ for operation in _operation_list:
                 previous_operated_amount_gross=ur["amount"] - 5,
                 previous_operated_amount_net=ur["amount_due"] - 4.5,
                 history=_history,
-
             )
-
         )
 
 mock_data = dict(
+    msc_customer=_msc_customer,
     asset_holders=_asset_holders,
     recurrence_list=_recurrence_list,
     operation_list=_operation_list,
